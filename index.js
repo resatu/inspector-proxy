@@ -1,17 +1,30 @@
-require('dotenv').config();
-const express = require('express');
+require("dotenv").config();
+const express = require("express");
+const cors = require('cors');
 
 const app = express();
 const port = 6000;
 
 const headers = {
-    "Authorization": process.env.ONE_INCH_AUTHORIZATION,
-    "Content-Type": "application/json"
+    Authorization: process.env.ONE_INCH_AUTHORIZATION,
+    "Content-Type": "application/json",
 };
 
 // WorldID app ID and action from .env file
 const WORLD_ID_APP_ID = process.env.WORLD_ID_APP_ID;
 const WORLD_ID_ACTION = process.env.WORLD_ID_ACTION;
+
+// CORS configuration
+const corsOptions = {
+  origin: 'https://inspector-ai.vercel.app',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
 
 // Middleware to handle request bodies
 app.use(express.json());
@@ -19,45 +32,65 @@ app.use(express.json());
 // Middleware for URL validation
 app.use((req, res, next) => {
     const url = req.query.url;
+    if (
+        !url ||
+        (!url.startsWith("https://api.1inch.dev") &&
+            !url.startsWith("https://api.worldcoin.org"))
+    ) {
+        return res.status(400).send("Invalid URL");
+    }
+    console.log("URL:", url);
     next();
 });
 
-app.get('/', async (req, res) => {
+app.get("/", async (req, res) => {
     try {
         const response = await fetch(req.query.url, { headers });
         const data = await response.json();
         if (!response.ok) {
-            console.error(`Invalid response: ${response.status} ${response.statusText}`);
-            console.error('Response data:', data);
+            console.error(
+                `Invalid response: ${response.status} ${response.statusText}`,
+            );
+            console.error("Response data:", data);
         }
         return res.send(data);
     } catch (error) {
-        console.error('Error occurred while fetching data:', error);
-        return res.status(500).send('Error occurred while fetching data: ' + JSON.stringify(error));
+        console.error("Error occurred while fetching data:", error);
+        return res
+            .status(500)
+            .send(
+                "Error occurred while fetching data: " + JSON.stringify(error),
+            );
     }
 });
 
-app.post('/', async (req, res) => {
+app.post("/", async (req, res) => {
     try {
         const response = await fetch(req.query.url, {
-            method: 'POST',
+            method: "POST",
             headers: headers,
-            body: JSON.stringify(req.body.data)
+            body: JSON.stringify(req.body.data),
         });
         const data = await response.json();
         if (!response.ok) {
-            console.error(`Invalid response: ${response.status} ${response.statusText}`);
-            console.error('Response data:', data);
+            console.error(
+                `Invalid response: ${response.status} ${response.statusText}`,
+            );
+            console.error("Response data:", data);
         }
         return res.send(data);
     } catch (error) {
-        console.error('Error occurred while fetching data:', error);
-        return res.status(500).send('Error occurred while fetching data: ' + JSON.stringify(error));
+        console.error("Error occurred while fetching data:", error);
+        return res
+            .status(500)
+            .send(
+                "Error occurred while fetching data: " + JSON.stringify(error),
+            );
     }
 });
 
 // New worldId endpoint
-app.post('/worldId', async (req, res) => {
+app.post("/worldId", async (req, res) => {
     try {
         const proof = req.body;
         const verified = await verifyProof(proof);
@@ -66,27 +99,26 @@ app.post('/worldId', async (req, res) => {
             // Proof is valid, proceed with your application logic
             res.json({ success: true, message: "Proof verified successfully" });
         } else {
-            console.error('Invalid proof received:', proof);
+            console.error("Invalid proof received:", proof);
             res.status(400).json({ success: false, message: "Invalid proof" });
         }
     } catch (error) {
-        console.error('Error in worldId endpoint:', error);
+        console.error("Error in worldId endpoint:", error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
 
 // Verification function
 const verifyProof = async (proof) => {
-    console.log('proof', proof);
     const response = await fetch(
         `https://developer.worldcoin.org/api/v1/verify/${WORLD_ID_APP_ID}`,
         {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
+                "Content-Type": "application/json",
             },
             body: JSON.stringify({ ...proof, action: WORLD_ID_ACTION }),
-        }
+        },
     );
     if (response.ok) {
         const verified = await response.json();
