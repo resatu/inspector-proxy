@@ -23,14 +23,14 @@ Once the correct version of Node is set for the environment, simply run:
 
 ## Running the Server
 
-Execute the command `node index.js`. The server will start on `http://localhost:3000`.
+Execute the command `node index.js`. The server will start on `http://localhost:6000`.
 
 ## Usage
 
 To make a request, use the following structure:
 
 ```
-http://localhost:3000/?url=https://api.1inch.dev/fusion/orders/v1.0/1/order/active
+http://localhost:6000/?url=https://api.1inch.dev/fusion/orders/v1.0/1/order/active
 ```
 
 Replace the URL parameter with your desired 1inch API endpoint.
